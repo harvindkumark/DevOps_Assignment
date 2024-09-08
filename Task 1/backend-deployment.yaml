@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: project-plato
+  annotations:
+    kubectl.kubernetes.io/preserves-immutable-fields: "true"
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: busybox
+        image: busybox:1.32.0
+        command: ['sh', '-c', 'tail -f /dev/null']
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          exec:
+            command:
+            - "sh"
+            - "-c"
+            - "true"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - "nc"
+            - "-zv"
+            - "db1-service"
+            - "6379"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: tmpdir
+          mountPath: /tmp
+      dnsPolicy: ClusterFirst
+      volumes:
+      - name: tmpdir
+        emptyDir: {}
